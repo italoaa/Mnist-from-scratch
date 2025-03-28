@@ -25,4 +25,27 @@ __global__ void backward(int bs, int n, int out_w, float* weights, float* biases
 }
 
 __global__ void relu_bw(int w, int h, int ns, float* a, float* d_l, float* b) {
+  int row = blockIdx.y * blockDim.y + threadIdx.y; 
+  int column = blockIdx.x * blockDim.x + threadIdx.x; 
+  if (row < bs && column < n) {
+    float act = a[row * w + column];
+    b[row * w + column] = act > 0.f ? d_l[row * w + column] : 0.f;
+  }
+}
+
+__global__ update_layer(int w, int h, int bs, float lr, float* weights, float* biases, float* activations, float* d_l) {
+  int row = blockIdx.y * blockDim.y + threadIdx.y; 
+  int column = blockIdx.x * blockDim.x + threadIdx.x; 
+  if (row < bs && column < n) {
+    float dw = 0.f;
+    float db = 0.f;
+    for (int i = 0; i < bs ; i++) {
+      float act = activations[i * h + row];
+      float dl = d_l[i * w + column];
+      dw += act * dl;
+      db += dl;
+    }
+    weights[row * w + column] -= lr * dw / bs;
+    biases[column] -= lr * db / bs;
+  }
 }

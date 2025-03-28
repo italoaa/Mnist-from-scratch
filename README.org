@@ -4,31 +4,13 @@
 * Acknowledgements
 This project is inspired by the YouTube series on GPU programming by [[https://www.youtube.com/playlist?list=PL5XwKDZZlwaY7t0M5OLprpkJUIrF8Lc9j][Simon Oz]]. Most of the kernels are based on the didactic examples he provides. Thank you Simon!
 
-* Main
-#+begin_src C++ :tangle "src/main.cpp" :includes '(<iostream.h>)
-"hellom"
+* Main program
+#+begin_src C++ :tangle "src/main.cpp" :includes '(<iostream.h>) :main no
+// 
 #+end_src
 
-* Data structures
-#+begin_src C++ :tangle "include/network.h" :includes '(<vector>) :main no
-#pragma once
-
-class NN {
-private:
-  std::vector<int> layers;
-
-  // host mem
-  std::vector<float*> w;
-  std::vector<float*> b;
-
-  // device mem
-  std::vector<float*> d_w;
-  std::vector<float*> d_b;
-  std::vector<float*> d_a;
-  std::vector<float*> d_deltas;
-#+end_src
-
-* Forward pass
+* Kernels
+** Forward pass
 :PROPERTIES:
 :header-args:C++: :noeval :tangle "./kernels/fw.cu" :main no
 :END:
@@ -155,7 +137,7 @@ __global__ void he_init(int w, int h, float* weights) {
 }
 #+end_src
 
-* Backward pass
+** Backward pass
 :PROPERTIES:
 :header-args:C++: :noeval :tangle "./kernels/bw.cu" :main no
 :END:
@@ -246,5 +228,39 @@ __global__ void backward(int bs, int n, int out_w, float* weights, float* biases
 Finally we need the backprop relu:
 #+begin_src C++
 __global__ void relu_bw(int w, int h, int ns, float* a, float* d_l, float* b) {
+  int row = blockIdx.y * blockDim.y + threadIdx.y; 
+  int column = blockIdx.x * blockDim.x + threadIdx.x; 
+  if (row < bs && column < n) {
+    float act = a[row * w + column];
+    b[row * w + column] = act > 0.f ? d_l[row * w + column] : 0.f;
+  }
+}
+#+end_src
+
+With this we are just left to calculate the derivative of the loss with respect to the weights:
+$$ x^n = a^{n-1}W^n+b^n $$
+$$ \frac{\partial x^n}{\partial W^n} = a^{n-1} $$
+$$ \frac{\partial x^n}{\partial b^n} = 1 $$
+
+And we can update our weights and biases as follows:
+$$ w \leftarrow w - \frac{\eta}{bs}\frac{\partial L}{\partial w^n} $$
+$$ b \leftarrow b - \frac{\eta}{bs}\frac{\partial L}{\partial b^n} $$
+
+#+begin_src C++
+__global__ update_layer(int w, int h, int bs, float lr, float* weights, float* biases, float* activations, float* d_l) {
+  int row = blockIdx.y * blockDim.y + threadIdx.y; 
+  int column = blockIdx.x * blockDim.x + threadIdx.x; 
+  if (row < bs && column < n) {
+    float dw = 0.f;
+    float db = 0.f;
+    for (int i = 0; i < bs ; i++) {
+      float act = activations[i * h + row];
+      float dl = d_l[i * w + column];
+      dw += act * dl;
+      db += dl;
+    }
+    weights[row * w + column] -= lr * dw / bs;
+    biases[column] -= lr * db / bs;
+  }
 }
 #+end_src
