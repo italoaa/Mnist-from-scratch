@@ -155,8 +155,96 @@ __global__ void he_init(int w, int h, float* weights) {
 }
 #+end_src
 
-* Backwards
+* Backward pass
 :PROPERTIES:
-:header-args:C++: :noeval :tangle "./kernels/fw.cu" :main no
+:header-args:C++: :noeval :tangle "./kernels/bw.cu" :main no
 :END:
 
+$$ x^n = a^{n-1}W^n+b^n $$
+
+This means for layer n the activations of layer n-1 is equal to its inputs "x^n"
+
+The backward pass involves gradient calculation. By applying the chain rule we can back-propagate the error. Given the loss function lets calculate the backwards cross entropy:
+
+$$\mathcal{L} = \text{cross entropy}(y, \hat{y})$$
+
+Lets start with the following equation with is the derivative of the loss with respect to the weights of the *last* layer:
+
+$$\frac{\partial \mathcal{L}}{\partial w} = \frac{\partial \mathcal{L}}{\partial \hat{y}} \frac{\partial \hat{y}}{\partial w}$$
+
+This equation says that the derivative of the loss with respect to the weights of the previous layer is the derivative of the loss with respect to the output of the last layer times the derivative of the output of the last layer with respect to the weights of the last layer. Lets start derivating!
+
+The final activation is the softmax function. Lets derivate it:
+$$\hat{y} = \text{softmax}(x) = \frac{e^{x_i}}{\sum_{j=1}^{n} e^{x_j}}$$
+$$\log(\hat{y}) = \log(\frac{e^{x_i}}{\sum_{j=1}^{n} e^{x_j}})$$
+$$\log(\hat{y}) = \log(e^{x_i}) - \log(\sum_{j=1}^{n} e^{x_j})$$
+$$\log(\hat{y}) = x_i - \log(\sum_{j=1}^{n} e^{x_j})$$
+Now taking the derivative actually leads to a very simple result:
+$$\frac{\partial \log(\hat{y})}{\partial x_k} = \delta_{ik} - \hat{y}_k$$
+$$\frac{1}{\hat{y}} \frac{\partial \log(\hat{y})}{\partial x_k} = \delta_{ik} - \hat{y}_k$$
+$$\frac{\partial \hat{y}}{\partial x} = \hat{y}(1 - \hat{y})$$
+
+The delta function is 1 if i equals k and 0 otherwise. This is the derivative of the softmax function.
+
+Then we applied a cross entropy loss function. Lets derivate it:
+$$\mathcal{L} = -\sum_{i=1}^{n} y_i \log(\hat{y}_i)$$
+$$\frac{\partial \mathcal{L}}{\partial \hat{y}} = -\frac{y}{\hat{y}}$$
+
+Now we can use the product of these two to find the full derivative:
+TODO ( I just realised its not w is x )
+$$\frac{\partial \mathcal{L}}{\partial w} = \frac{\partial \mathcal{L}}{\partial \hat{y}} \frac{\partial \hat{y}}{\partial w}$$
+$$\frac{\partial \mathcal{L}}{\partial w} = -\frac{y}{\hat{y}} \times \hat{y}(1 - \hat{y}) $$ - I am not sure if this is the derivation (double check when possible)
+$$\frac{\partial \mathcal{L}}{\partial w} = \hat{y} - y $$ - I do know this is the final
+
+
+So this is the backwards for the cross entropy:
+#+begin_src C++
+__global__ void ce_back(int w, int h, float* preds, float* gt, float* output) {
+  int row = blockIdx.y * blockDim.y + threadIdx.y; 
+  // x for column (width of the mat)
+  int column = blockIdx.x * blockDim.x + threadIdx.x; 
+  if (row < h && column < w) {
+    // $$\frac{\partial \mathcal{L}}{\partial w} = \hat{y} - y $$
+
+    output[row * w + column] = preds[row * w + column] - gt[row * w + column]
+   }
+}
+#+end_src
+
+
+With the derivate of the loss with respect to the inputs of the output layer: (in here y hat is the activation's of last layer, but from now on i will refer to activation's as a)
+$$\frac{\partial \mathcal{L}}{\partial x^n} = \frac{\partial \mathcal{L}}{\partial \hat{y}^n}\frac{\partial \hat{y}^n}{\partial x^n}$$
+We must take a step backwards to layer n-1:
+$$\frac{\partial \mathcal{L}}{\partial a^{n-1}} = \frac{\partial \mathcal{L}}{\partial \hat{y}^n}\frac{\partial \hat{y}^n}{\partial x^n} \times \frac{\partial x^n}{\partial a^{n-1}}$$
+
+So the values $x^n$: refer to this
+$$ x^n = a^{n-1}W^n+b^n $$
+$$ \frac{\partial x^n}{\partial a^{n-1}} = W^n $$
+
+We must matrix multiply to backprop. Once we have the derivative of x^n with respect to the loss at the last layer we can go back:
+$$ \frac{\partial \mathcal{L}}{\partial x^{n-1}} = \frac{\partial \mathcal{L}}{\partial x^{n}} \frac{\partial x^n}{\partial a^{n-1}} $$
+$$ \frac{\partial \mathcal{L}}{\partial x^{n-1}} = \frac{\partial \mathcal{L}}{\partial x^{n}} W^n $$
+
+#+begin_src C++
+__global__ void backward(int bs, int n, int out_w, float* weights, float* biases, float* d_l, float* out_d_l) {
+  int row = blockIdx.y * blockDim.y + threadIdx.y; 
+  int column = blockIdx.x * blockDim.x + threadIdx.x; 
+  if (row < bs && column < n) {
+    float dl = 0.f;
+    // $$ \frac{\partial \mathcal{L}}{\partial x^{n-1}} = \frac{\partial \mathcal{L}}{\partial x^{n}} W^n $$
+    // in english our weights times the derivative of the next layer so n + 1
+    for (int i = 0; i < n; i++) {
+      float w = weights[i * out_w + column];
+      dl += w * d_l[row * n + i];
+    }
+    out_d_l[row * out_w + column] = dl;
+  }
+}
+#+end_src
+
+
+Finally we need the backprop relu:
+#+begin_src C++
+__global__ void relu_bw(int w, int h, int ns, float* a, float* d_l, float* b) {
+}
+#+end_src
