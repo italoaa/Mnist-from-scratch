@@ -34,15 +34,15 @@ private:
 :END:
 
 This forward pass expects a matrix:
-$X \in \mathbb{R}^{bs \times n}$
+$$X \in \mathbb{R}^{bs \times n}$$
 where bs is the batch size and n is the number of features. The weights matrix is:
-$W \in \mathbb{R}^{n \times out\_w}$
+$$W \in \mathbb{R}^{n \times out\_w}$$
 where out_w is the number of output neurons. The biases matrix is:
-$B \in \mathbb{R}^{1 \times out\_w}$
+$$B \in \mathbb{R}^{1 \times out\_w}$$
 The output matrix is:
-$O \in \mathbb{R}^{bs \times out\_w}$
+$$O \in \mathbb{R}^{bs \times out\_w}$$
 The calculation is:
-$O = X \cdot W + B$
+$$O = X \cdot W + B$$
 #+begin_src C++
 // input of (bs, n) matrix representing bs amount of samples where each sample has n dimentions.
 __global__ void forward(int bs, int n, int out_w,
@@ -63,7 +63,7 @@ __global__ void forward(int bs, int n, int out_w,
 #+end_src
 
 Now we need an activation function. We will use the relu function:
-$relu(x) = max(0, x)$
+$$relu(x) = max(0, x)$$
 #+begin_src C++
 
 __global__ void relu(int w, int h, float* input, float* output) {
@@ -78,9 +78,9 @@ __global__ void relu(int w, int h, float* input, float* output) {
 
 
 Finally to output the logits at the end we need softmax:
-$\text{softmax}(x) = \frac{e^{x_i}}{\sum_{j=1}^{n} e^{x_j}}$
+$$\text{softmax}(x) = \frac{e^{x_i}}{\sum_{j=1}^{n} e^{x_j}}$$
 To mitigate overflow we can substract the maxium input vector from the exponents the powers are then always negative
-$\text{softmax}(x) = \frac{e^{x_i - \max(x)}}{\sum_{j=1}^{n} e^{x_j - \max(x)}}$
+$$\text{softmax}(x) = \frac{e^{x_i - \max(x)}}{\sum_{j=1}^{n} e^{x_j - \max(x)}}$$
 #+begin_src C++
 __global__ void softmax(int w, int h, float* input, float* output) {
   int row = blockIdx.y * blockDim.y + threadIdx.y; 
@@ -100,8 +100,8 @@ __global__ void softmax(int w, int h, float* input, float* output) {
 #+end_src
 
 Now having the output probabilities we can calculate the loss. We will use the cross entropy loss:
-$\text{cross entropy}(y, \hat{y}) = -\sum_{i=1}^{n} y_i \log(\hat{y}_i)$
-where$y$is the true label and$\hat{y}$is the predicted label. We also use max in the y hat part to avoid log(0)
+$$\text{cross entropy}(y, \hat{y}) = -\sum_{i=1}^{n} y_i \log(\hat{y}_i)$$
+where$$y$$is the true label and$$\hat{y}$$is the predicted label. We also use max in the y hat part to avoid log(0)
 
 : we could use atomics but i am not sure how to implement them yet
 #+begin_src C++
@@ -122,7 +122,7 @@ __global__ void cross_entropy(int w, int h, float* preds, float* gt, float* outp
 
 Finally for initialising the weights we can use kaiming he initialisation:
 
-$\text{he init}(w, h) = \sqrt{\frac{2}{w}} \cdot \text{randn}$
+$$\text{he init}(w, h) = \sqrt{\frac{2}{w}} \cdot \text{randn}$$
 
 where randn is a random number from a normal distribution. Not going in depth but this is done to avoid internal covariate shift.
 #+begin_src C++
