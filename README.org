@@ -41,7 +41,6 @@ where out_w is the number of output neurons. The biases matrix is:
 $B \in \mathbb{R}^{1 \times out\_w}$
 The output matrix is:
 $O \in \mathbb{R}^{bs \times out\_w}$
-
 The calculation is:
 $O = X \cdot W + B$
 #+begin_src C++
@@ -122,7 +121,9 @@ __global__ void cross_entropy(int w, int h, float* preds, float* gt, float* outp
 #+end_src
 
 Finally for initialising the weights we can use kaiming he initialisation:
+
 $\text{he init}(w, h) = \sqrt{\frac{2}{w}} \cdot \text{randn}$
+
 where randn is a random number from a normal distribution. Not going in depth but this is done to avoid internal covariate shift.
 #+begin_src C++
 __global__ void he_init(int w, int h, float* weights) {
