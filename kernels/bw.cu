@@ -1,3 +1,7 @@
+#include <curand.h>
+#include <curand_kernel.h>
+#include <cuda_runtime.h>
+
 __global__ void ce_back(int w, int h, float* preds, float* gt, float* output) {
   int row = blockIdx.y * blockDim.y + threadIdx.y; 
   // x for column (width of the mat)

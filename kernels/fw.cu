@@ -1,3 +1,7 @@
+#include <curand.h>
+#include <curand_kernel.h>
+#include <cuda_runtime.h>
+
 // input of (bs, n) matrix representing bs amount of samples where each sample has n dimentions.
 __global__ void forward(int bs, int n, int out_w,
 			float* input, float* weights, float* biases, float* out) {

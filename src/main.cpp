@@ -8,9 +8,6 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream> 
-#include <curand.h>
-#include <curand_kernel.h>
-#include <cuda_runtime.h>
 #include <cassert>
 #include <string>
 
