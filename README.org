@@ -1,12 +1,7 @@
 #+title: MNIST from scratch
 #+description: Using cuda to fit MNIST
 
-#+begin_src python
-import pandas as pd; import matplotlib.pyplot as plt; df = pd.read_csv("training_results.csv"); plt.plot(df.iloc[:,0], df.iloc[:,3]); plt.xlabel("Epoch"); plt.ylabel("Accuracy"); plt.title("Training Accuracy"); plt.grid(); plt.savefig("acc.png", dpi=300)
-#+end_src
-
-#+RESULTS:
-: None
+[[file:acc.png]]
 
 * Acknowledgements
 This project is inspired by the YouTube series on GPU programming by [[https://www.youtube.com/playlist?list=PL5XwKDZZlwaY7t0M5OLprpkJUIrF8Lc9j][Simon Oz]]. Most of the kernels are based on the didactic examples he provides. Thank you Simon!
