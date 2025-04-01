@@ -1,20 +1,17 @@
-#include <curand.h>
-#include <curand_kernel.h>
-#include <cuda_runtime.h>
-
+#include "fw.h"
 // input of (bs, n) matrix representing bs amount of samples where each sample has n dimentions.
 __global__ void forward(int bs, int n, int out_w,
-			float* input, float* weights, float* biases, float* out) {
+			float* input, float* weights, float* biases, float* output) {
   // y for rows (height of the mat)
   int row = blockIdx.y * blockDim.y + threadIdx.y; 
   // x for column (width of the mat)
   int column = blockIdx.x * blockDim.x + threadIdx.x; 
 
   // do the dot product between the row and col
-  if (row < bs && col < out_w) {
+  if (row < bs && column < out_w) {
     output[row*out_w + column] = biases[column];
     for (int i = 0; i < n; i++) {
-      output[row * out_w + column] += weights[i * out_w + column] * input[row * n + i]
+      output[row * out_w + column] += weights[i * out_w + column] * input[row * n + i];
     }
   }
 }
@@ -51,19 +48,10 @@ __global__ void cross_entropy(int w, int h, float* preds, float* gt, float* outp
   int idx = blockIdx.x*blockDim.x + threadIdx.x; // get the index of the current thread
   if (idx < h) {
     float loss = 0.f;
-    fot (int i = 0; i < w; i++) { // loop over the number of classes
+    for (int i = 0; i < w; i++) { // loop over the number of classes
       loss -= gt[idx * w + i] * log(max(1e-6, preds[idx * w + i]));
     }
-    outputs[idx] = loss;
+    output[idx] = loss;
   }
 }
 
-__global__ void he_init(int w, int h, float* weights) {
-  int row = blockIdx.y * blockDim.y + threadIdx.y; 
-  int column = blockIdx.x * blockDim.x + threadIdx.x; 
-  if (row < h && column < w) {
-    curandState state; // State for the random number generator
-    curand_init(42, row * w + column, 0, &state); // Initialize the state
-    weights[row * w + column] = sqrtf(2.0 / w) * curand_normal(&state);
-  }
-}

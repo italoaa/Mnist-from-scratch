@@ -1,1 +1,4 @@
 ltximg/*
+*.o
+net
+mnist_*.csv

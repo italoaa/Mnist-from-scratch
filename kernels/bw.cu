@@ -1,6 +1,4 @@
-#include <curand.h>
-#include <curand_kernel.h>
-#include <cuda_runtime.h>
+#include "bw.h"
 
 __global__ void ce_back(int w, int h, float* preds, float* gt, float* output) {
   int row = blockIdx.y * blockDim.y + threadIdx.y; 
@@ -9,7 +7,7 @@ __global__ void ce_back(int w, int h, float* preds, float* gt, float* output) {
   if (row < h && column < w) {
     // $$\frac{\partial \mathcal{L}}{\partial w} = \hat{y} - y $$
 
-    output[row * w + column] = preds[row * w + column] - gt[row * w + column]
+    output[row * w + column] = preds[row * w + column] - gt[row * w + column];
    }
 }
 
@@ -28,19 +26,19 @@ __global__ void backward(int bs, int n, int out_w, float* weights, float* biases
   }
 }
 
-__global__ void relu_bw(int w, int h, int ns, float* a, float* d_l, float* b) {
+__global__ void relu_backwards(int w, int h, float* a, float* d_l, float* b) {
   int row = blockIdx.y * blockDim.y + threadIdx.y; 
   int column = blockIdx.x * blockDim.x + threadIdx.x; 
-  if (row < bs && column < n) {
+  if (row < h && column < w) {
     float act = a[row * w + column];
     b[row * w + column] = act > 0.f ? d_l[row * w + column] : 0.f;
   }
 }
 
-__global__ update_layer(int w, int h, int bs, float lr, float* weights, float* biases, float* activations, float* d_l) {
+__global__ void update_layer(int w, int h, int bs, float lr, float* weights, float* biases, float* activations, float* d_l) {
   int row = blockIdx.y * blockDim.y + threadIdx.y; 
   int column = blockIdx.x * blockDim.x + threadIdx.x; 
-  if (row < bs && column < n) {
+  if (row < h && column < w) {
     float dw = 0.f;
     float db = 0.f;
     for (int i = 0; i < bs ; i++) {
@@ -53,3 +51,4 @@ __global__ update_layer(int w, int h, int bs, float lr, float* weights, float* b
     biases[column] -= lr * db / bs;
   }
 }
+

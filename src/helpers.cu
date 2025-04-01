@@ -1,4 +1,19 @@
-int main() {
+#include "helpers.h"
+
+
+#define ASSERT(cond, msg, args...) assert((cond) || !fprintf(stderr, (msg "\n"), args))
+#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+
+__global__ void init_rand(int w, int h, float* weights) {
+  int row = blockIdx.y * blockDim.y + threadIdx.y; 
+  int column = blockIdx.x * blockDim.x + threadIdx.x; 
+  if (row < h && column < w) {
+    curandState state; // State for the random number generator
+    curand_init(42, row * w + column, 0, &state); // Initialize the state
+    weights[row * w + column] = sqrtf(2.0 / w) * curand_normal(&state);
+  }
+}
+
 void print_matrix(int w, int h, float* matrix, std::string title)
 {
   float* m_h = new float[w*h];
@@ -30,6 +45,7 @@ void initLayer(float* weights, float* biases, int w, int h, int BLOCK_SIZE)
 
 void read_mnist(const std::string filename, int length, float* x, float* y)
 {
+  // std::cout << "DEBUG: reading " << filename << std::endl;
   int input_size = 784;
   int labels = 10;
 
@@ -38,10 +54,30 @@ void read_mnist(const std::string filename, int length, float* x, float* y)
   std::string row;
   constexpr char delim = ',';
   for(int i = 0; i<length; i++)
-  {
-    fin >> row;
-    int pos = row.find(delim);
-    int label = std::stoi(row.substr(0, pos+1));
+    {
+      fin >> row;
+      int pos = row.find(delim);
+      if (pos == std::string::npos) {
+	std::cout << "DEBUG: Processing row " << i << ": " << row << std::endl;
+	std::cerr << "ERROR: Malformed CSV row (missing delimiter) at row " << i << std::endl;
+	std::exit(1);
+      }
+      std::string label_str = row.substr(0, pos+1);
+      int label;
+      try {
+	label = std::stoi(label_str);
+
+	for(int j = 0; j < labels; j++)
+	  {
+	    y[labels * i + j] = (j == label);
+	  }
+      } catch (const std::exception& e) {
+	std::cout << "DEBUG: Processing row " << i << ": " << row << std::endl;
+	std::cout << "DEBUG: Extracted label string: " << label_str << std::endl;
+	std::cerr << "ERROR: Failed to convert label to int at row " << i << ": " << e.what() << std::endl;
+	std::exit(1);
+      }
+
     for(int j = 0; j<labels; j++)
     {
       y[labels*i + j] = (j==label);
@@ -60,5 +96,4 @@ void read_mnist(const std::string filename, int length, float* x, float* y)
     ASSERT(row.length() == 0, "didn't parse all values in row, %d", i);
   }
 }
-return 0;
-}
+
