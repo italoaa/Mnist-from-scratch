@@ -1,10 +1,16 @@
 #+title: MNIST from scratch
 #+description: Using cuda to fit MNIST
 
+This project provides a foundational implementation of neural network operations using CUDA for GPU acceleration. It serves as a learning exercise in GPU programming, focusing on implementing both forward and backward propagation passes from scratch.
+
+Below, you'll find detailed documentation of the CUDA kernels alongside their mathematical formulations, providing insight into the core operations that power neural network computations on the GPU.
+
+The implementation prioritizes clarity and educational value to help demonstrate the principles of parallel computation in the context of deep learning algorithms.
+
 [[file:acc.png]]
 
 * Acknowledgements
-This project is inspired by the YouTube series on GPU programming by [[https://www.youtube.com/playlist?list=PL5XwKDZZlwaY7t0M5OLprpkJUIrF8Lc9j][Simon Oz]]. Most of the kernels are based on the didactic examples he provides. Thank you Simon!
+This project is inspired by the YouTube series on GPU programming by [[https://www.youtube.com/playlist?list=PL5XwKDZZlwaY7t0M5OLprpkJUIrF8Lc9j][Simon Oz]]. All of the kernels are based on the examples he provides. Thank you Simon! your work has fundamental in this project.
 
 * Forward pass
 :PROPERTIES:
