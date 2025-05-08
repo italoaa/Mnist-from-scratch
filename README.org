@@ -6,7 +6,7 @@ This project provides a foundational implementation of neural network operations
 [[file:acc.png]]
 
 * Acknowledgements
-This project is inspired by the YouTube series on GPU programming by [[https://www.youtube.com/playlist?list=PL5XwKDZZlwaY7t0M5OLprpkJUIrF8Lc9j][Simon Oz]]. All of the kernels are based on the examples he provides. Thank you Simon! your work has fundamental in this project.
+This project is inspired by the YouTube series on GPU programming by [[https://www.youtube.com/playlist?list=PL5XwKDZZlwaY7t0M5OLprpkJUIrF8Lc9j][Simon Oz]]. All of the kernels are based on the examples he provides. Thank you Simon! I have learned a lot!
 
 * Structure
 The project has two main folders:
