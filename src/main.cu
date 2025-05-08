@@ -319,7 +319,6 @@ int main(int argc, char** argv)
       gpuErrchk(cudaPeekAtLastError());
 
       // back prop through the relu
-      // relu_backwards<<<dimGrid, dimBlock>>>(size2, BATCH_SIZE, a2, d_l2, d_l2);
       relu_backwards<<<dimGrid, dimBlock>>>(hiddenSize2, BATCH_SIZE, 
 							 activationsLayer2, hiddenGradients2, hiddenGradients2
 					    );
