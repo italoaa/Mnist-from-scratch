@@ -3,10 +3,29 @@
 
 This project provides a foundational implementation of neural network operations using CUDA for GPU acceleration. It serves as a learning exercise in GPU programming, focusing on implementing both forward and backward propagation passes from scratch.
 
-Below, you'll find detailed documentation of the CUDA kernels alongside their mathematical formulations, providing insight into the core operations that power neural network computations on the GPU.
-
 [[file:acc.png]]
 
 * Acknowledgements
 This project is inspired by the YouTube series on GPU programming by [[https://www.youtube.com/playlist?list=PL5XwKDZZlwaY7t0M5OLprpkJUIrF8Lc9j][Simon Oz]]. All of the kernels are based on the examples he provides. Thank you Simon! your work has fundamental in this project.
 
+* Structure
+The project has two main folders:
+- ~kernels~
+- ~src~
+
+Inside the kernels directory there are the kernels for the forward pass in ~fw.cu~ and the backwards pass in ~bw.cu~. In the ~src~ directory we have the main ~main.cu~ file and a simple helper file for extra functionality in ~helpers.cu~.
+
+* Kernels
+** Forward
+For the forward pass we used 4 kernels:
+1. Forward Kernel: used to calculate the MM of the hidden units
+2. ReLU kernel: for the activation's of each layer
+3. Softmax Kernel: To use cross entropy for our loss
+4. Cross Entropy Kernel: To calculate the loss and train our network
+
+** Backwards
+For the backwards pass we also used 4 kernels:
+1. Cross Entropy Back: Calculated the Cross entropy backwards all the way to before softmax
+2. Backwards: Back-propagation function for the forwards kernel
+3. ReLU Back: Back-propagates through the ReLU kernel
+4. Update_layer: Used to update the weights of a layer with its gradients and a learning rate
