@@ -1,7 +1,7 @@
 #+title: MNIST from scratch
 #+description: Using cuda to fit MNIST
 
-This project provides a foundational implementation of neural network operations using CUDA for GPU acceleration. It serves as a learning exercise in GPU programming, focusing on implementing both forward and backward propagation passes from scratch.
+This project provides a foundational implementation of neural network using CUDA for GPU acceleration. It serves as a learning exercise in GPU programming, focusing on implementing both forward and backward propagation passes from scratch.
 
 [[file:acc.png]]
 
